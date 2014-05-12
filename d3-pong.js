@@ -19,13 +19,13 @@
             var width = 5,
                 area = svg.append('rect')
                     .classed('area', true)
-                    .attr({width: width*5}),
+                    .attr({width: width*7}),
                 paddle = svg.append('rect')
                     .classed('paddle', true)
                     .classed(which+"_paddle", true)
                     .attr({width: 5}),
                 update = function (x, y) {
-                    var height = Screen().height*0.1;
+                    var height = Screen().height*0.15;
 
                     paddle.attr({
                         x: x,
@@ -99,7 +99,7 @@
                 scale = d3.scale.linear().domain([0, 1]).range([-1, 1]),
                 vector = {x: scale(Math.random()),
                           y: scale(Math.random())},
-                speed = 10;
+                speed = 7;
 
             var hit_paddle = function (y, paddle) {
                 return y-R > Number(paddle.attr("y")) && y+R < Number(paddle.attr("y"))+Number(paddle.attr("height"));
@@ -189,3 +189,5 @@
     };
     run();
 })();
+
+document.body.addEventListener('touchstart', function(e){ e.preventDefault(); });
