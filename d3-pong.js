@@ -1,19 +1,22 @@
-"use strict";
 
 (function () {
+    "use strict";
 
     var svg = d3.select("main")
             .append("svg"),
         margin = {top: 10,
                   right: 10,
                   bottom: 10,
-                  left: 10};
+                  left: 10},
+        parse = function (N) {
+            return Number(N.replace("px", ""));
+        };
 
     // always returns current SVG dimensions
     var Screen = function () {
             return {
-                width: Number(svg.style("width").replace("px", "")),
-                height: Number(svg.style("height").replace("px", ""))
+                width: parse(svg.style("width")),
+                height: parse(svg.style("height"))
             };
         },
         // generates a paddle, returns function for updating its position
@@ -45,19 +48,19 @@
             // make paddle draggable
             var drag = d3.behavior.drag()
                     .on("drag", function () {
-                        var y = Number(area.attr("y")),
+                        var y = parse(area.attr("y")),
                             height = Screen().height*0.1;
                         
-                        update(Number(paddle.attr("x")),
+                        update(parse(paddle.attr("x")),
                                Math.max(margin.top, 
-                                        Math.min(Number(paddle.attr("y"))+d3.event.dy,
+                                        Math.min(parse(paddle.attr("y"))+d3.event.dy,
                                                  Screen().height-margin.bottom-height)));
                                         
                                         
                     })
                     .origin(function () {
-                        return {x: Number(area.attr("x")),
-                                y: Number(area.attr("y"))};
+                        return {x: parse(area.attr("x")),
+                                y: parse(area.attr("y"))};
                     });
 
             area.call(drag);
@@ -85,6 +88,7 @@
 
             return function f() {
                 var screen = Screen();
+                console.log(screen);
                 line.attr({
                     x1: screen.width/2,
                     y1: margin.top,
@@ -108,11 +112,11 @@
                 speed = 7;
 
             var hit_paddle = function (y, paddle) {
-                return y-R > Number(paddle.attr("y")) && y+R < Number(paddle.attr("y"))+Number(paddle.attr("height"));
+                return y-R > parse(paddle.attr("y")) && y+R < parse(paddle.attr("y"))+parse(paddle.attr("height"));
             },
             collisions = function () {
-                var x = Number(ball.attr("cx")),
-                    y = Number(ball.attr("cy")),
+                var x = parse(ball.attr("cx")),
+                    y = parse(ball.attr("cy")),
                     left_p = d3.select(".left_paddle"),
                     right_p = d3.select(".right_paddle");
 
@@ -122,7 +126,7 @@
                 }
                 
                 // bounce off right paddle or score
-                if (x+R > Number(right_p.attr("x"))) {
+                if (x+R > parse(right_p.attr("x"))) {
                     if (hit_paddle(y, right_p)) {
                         vector.x = -vector.x;
                     }else{
@@ -132,7 +136,7 @@
 
                 // bounce off left paddle or score
                 if (x-R < 
-                    Number(left_p.attr("x"))+Number(left_p.attr("width"))) {
+                    parse(left_p.attr("x"))+parse(left_p.attr("width"))) {
                     if (hit_paddle(y, left_p)) {
                         vector.x = -vector.x;
                     }else{
@@ -143,12 +147,14 @@
                 return false;
             };
             
-            return function f(left, right) {
-                var screen = Screen();
+            return function f(left, right, delta_t) {
+                var screen = Screen(),
+                    // this should pretend we have 100 fps
+                    fps = delta_t > 0 ? (delta_t/1000)/100 : 1; 
 
                 ball.attr({
-                    cx: Number(ball.attr("cx"))+vector.x*speed,
-                    cy: Number(ball.attr("cy"))+vector.y*speed
+                    cx: parse(ball.attr("cx"))+vector.x*speed*fps,
+                    cy: parse(ball.attr("cy"))+vector.y*speed*fps
                 });
                 
                 var scored = collisions();
@@ -190,8 +196,13 @@
     // start animation timer that runs until a player scores
     // then reset ball and start again
     function run() {
+        var last_time = Date.now();
         d3.timer(function () {
-            var scored = ball(left, right);
+            
+            var now = Date.now(),
+                scored = ball(left, right, now-last_time),
+                last_time = now;
+
             if (scored) {
                 d3.select(".ball").remove();
                 ball = Ball();
