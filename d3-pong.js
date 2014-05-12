@@ -17,16 +17,31 @@
         },
         Paddle = function () {
             var paddle = svg.append('rect')
-                    .attr({width: 5});
+                    .attr({width: 5}),
+                update = function (x, y) {
+                    paddle.attr({
+                        x: x,
+                        y: y,
+                        height: Screen().height*0.1
+                    });
+                    return update;
+                };
+            
+            var drag = d3.behavior.drag()
+                    .on("drag", function () {
+                        var y = Number(paddle.attr("y"));
 
-            return function f(x, y) {
-                paddle.attr({
-                    x: x,
-                    y: y,
-                    height: Screen().height*0.1
-                });
-                return f;
-            };
+                        update(Number(paddle.attr("x")),
+                               Number(paddle.attr("y"))+d3.event.dy);
+                    })
+                    .origin(function () {
+                        return {x: Number(paddle.attr("x")),
+                                y: Number(paddle.attr("y"))};
+                    });
+
+            paddle.call(drag);
+
+            return update;
         },
         Score = function (x) {
             var score = svg.append('text');
