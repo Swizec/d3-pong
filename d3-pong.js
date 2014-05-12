@@ -9,12 +9,14 @@
                   bottom: 10,
                   left: 10};
 
+    // always returns current SVG dimensions
     var Screen = function () {
             return {
                 width: Number(svg.style("width").replace("px", "")),
                 height: Number(svg.style("height").replace("px", ""))
             };
         },
+        // generates a paddle, returns function for updating its position
         Paddle = function (which) {
             var width = 5,
                 area = svg.append('rect')
@@ -40,6 +42,7 @@
                     return update;
                 };
             
+            // make paddle draggable
             var drag = d3.behavior.drag()
                     .on("drag", function () {
                         var y = Number(area.attr("y")),
@@ -61,6 +64,7 @@
 
             return update;
         },
+        // generates a score, returns function for updating value and repositioning score
         Score = function (x) {
             var value = 0,
                 score = svg.append('text')
@@ -75,6 +79,7 @@
                 return f;
             };
         },
+        // generates middle line, returns function for updating position
         Middle = function () {
             var line = svg.append('line');
 
@@ -89,6 +94,7 @@
                 return f;
             };
         },
+        // generates the ball, returns function to perform animation steps
         Ball = function () {
             var R = 5,
                 ball = svg.append('circle')
@@ -110,10 +116,12 @@
                     left_p = d3.select(".left_paddle"),
                     right_p = d3.select(".right_paddle");
 
+                // collision with top or bottom
                 if (y-R < margin.top || y+R > Screen().height-margin.bottom) {
                     vector.y = -vector.y;
                 }
                 
+                // bounce off right paddle or score
                 if (x+R > Number(right_p.attr("x"))) {
                     if (hit_paddle(y, right_p)) {
                         vector.x = -vector.x;
@@ -122,6 +130,7 @@
                     }
                 }
 
+                // bounce off left paddle or score
                 if (x-R < 
                     Number(left_p.attr("x"))+Number(left_p.attr("width"))) {
                     if (hit_paddle(y, left_p)) {
@@ -158,6 +167,7 @@
         };
     
 
+    // generate starting scene
     var left = {score: Score(0.25)(0),
                 paddle: Paddle("left")(margin.left, Screen().height/2)},
         right = {score: Score(0.75)(0),
@@ -165,6 +175,7 @@
         middle = Middle()(),
         ball = Ball();
     
+    // detect window resize events (also captures orientation changes)
     d3.select(window).on('resize', function () {
         var screen = Screen();
 
@@ -176,6 +187,8 @@
         middle();
     });
 
+    // start animation timer that runs until a player scores
+    // then reset ball and start again
     function run() {
         d3.timer(function () {
             var scored = ball(left, right);
