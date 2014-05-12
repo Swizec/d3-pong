@@ -62,9 +62,13 @@
             return update;
         },
         Score = function (x) {
-            var score = svg.append('text');
+            var value = 0,
+                score = svg.append('text')
+                    .text(value);
 
-            return function f(value) {
+            return function f(inc) {
+                value += inc;
+
                 score.text(value)
                     .attr({x: Screen().width*x,
                            y: margin.top*3});
@@ -98,9 +102,9 @@
                 speed = 10;
 
             var hit_paddle = function (y, paddle) {
-                return y > Number(paddle.attr("y")) && y < Number(paddle.attr("y"))+Number(paddle.attr("height"));
+                return y-R > Number(paddle.attr("y")) && y+R < Number(paddle.attr("y"))+Number(paddle.attr("height"));
             },
-            collision = function (vector) {
+            collisions = function () {
                 var x = Number(ball.attr("cx")),
                     y = Number(ball.attr("cy")),
                     left_p = d3.select(".left_paddle"),
@@ -113,6 +117,8 @@
                 if (x+R > Number(right_p.attr("x"))) {
                     if (hit_paddle(y, right_p)) {
                         vector.x = -vector.x;
+                    }else{
+                        return "left";
                     }
                 }
 
@@ -120,10 +126,12 @@
                     Number(left_p.attr("x"))+Number(left_p.attr("width"))) {
                     if (hit_paddle(y, left_p)) {
                         vector.x = -vector.x;
+                    }else{
+                        return "right";
                     }
                 }
-                
-                return vector;
+
+                return false;
             };
             
             return function f(left, right) {
@@ -134,9 +142,18 @@
                     cy: Number(ball.attr("cy"))+vector.y*speed
                 });
                 
-                vector = collision(vector);
+                var scored = collisions();
+                    
+                if (scored) {
+                    if (scored == "left") {
+                        left.score(1);
+                    }else{
+                        right.score(1);
+                    }
+                    return true;
+                }
 
-                return f;
+                return false;
             };
         };
     
@@ -159,13 +176,16 @@
         middle();
     });
 
-    var steps = 0;
-    d3.timer(function () {
-        ball(left, right);
-
-        if (steps++ > 1000) {
-            return true;
-        }
-        return false;
-    }, 500);
+    function run() {
+        d3.timer(function () {
+            var scored = ball(left, right);
+            if (scored) {
+                d3.select(".ball").remove();
+                ball = Ball();
+                run();
+            }
+            return scored;
+        }, 500);
+    };
+    run();
 })();
