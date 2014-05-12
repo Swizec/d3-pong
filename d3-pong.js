@@ -16,30 +16,43 @@
             };
         },
         Paddle = function () {
-            var paddle = svg.append('rect')
+            var width = 5,
+                area = svg.append('rect')
+                    .classed('area', true)
+                    .attr({width: width*5}),
+                paddle = svg.append('rect')
+                    .classed('paddle', true)
                     .attr({width: 5}),
                 update = function (x, y) {
+                    var height = Screen().height*0.1;
+
                     paddle.attr({
                         x: x,
                         y: y,
-                        height: Screen().height*0.1
+                        height: height
+                    });
+                    area.attr({
+                        x: x-width*5/2,
+                        y: y,
+                        height: height
                     });
                     return update;
                 };
             
             var drag = d3.behavior.drag()
                     .on("drag", function () {
-                        var y = Number(paddle.attr("y"));
+                        var y = Number(area.attr("y"));
+                        console.log(y);
 
                         update(Number(paddle.attr("x")),
                                Number(paddle.attr("y"))+d3.event.dy);
                     })
                     .origin(function () {
-                        return {x: Number(paddle.attr("x")),
-                                y: Number(paddle.attr("y"))};
+                        return {x: Number(area.attr("x")),
+                                y: Number(area.attr("y"))};
                     });
 
-            paddle.call(drag);
+            area.call(drag);
 
             return update;
         },
