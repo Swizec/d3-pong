@@ -41,11 +41,15 @@
             
             var drag = d3.behavior.drag()
                     .on("drag", function () {
-                        var y = Number(area.attr("y"));
-                        console.log(y);
-
+                        var y = Number(area.attr("y")),
+                            height = Screen().height*0.1;
+                        
                         update(Number(paddle.attr("x")),
-                               Number(paddle.attr("y"))+d3.event.dy);
+                               Math.max(margin.top, 
+                                        Math.min(Number(paddle.attr("y"))+d3.event.dy,
+                                                 Screen().height-margin.bottom-height)));
+                                        
+                                        
                     })
                     .origin(function () {
                         return {x: Number(area.attr("x")),
