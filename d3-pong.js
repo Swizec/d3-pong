@@ -15,13 +15,14 @@
                 height: Number(svg.style("height").replace("px", ""))
             };
         },
-        Paddle = function () {
+        Paddle = function (which) {
             var width = 5,
                 area = svg.append('rect')
                     .classed('area', true)
                     .attr({width: width*5}),
                 paddle = svg.append('rect')
                     .classed('paddle', true)
+                    .classed(which+"_paddle", true)
                     .attr({width: 5}),
                 update = function (x, y) {
                     var height = Screen().height*0.1;
@@ -83,14 +84,69 @@
                 });
                 return f;
             };
+        },
+        Ball = function () {
+            var R = 5,
+                ball = svg.append('circle')
+                    .classed("ball", true)
+                    .attr({r: R,
+                           cx: Screen().width/2,
+                           cy: Screen().height/2}),
+                scale = d3.scale.linear().domain([0, 1]).range([-1, 1]),
+                vector = {x: scale(Math.random()),
+                          y: scale(Math.random())},
+                speed = 10;
+
+            var hit_paddle = function (y, paddle) {
+                return y > Number(paddle.attr("y")) && y < Number(paddle.attr("y"))+Number(paddle.attr("height"));
+            },
+            collision = function (vector) {
+                var x = Number(ball.attr("cx")),
+                    y = Number(ball.attr("cy")),
+                    left_p = d3.select(".left_paddle"),
+                    right_p = d3.select(".right_paddle");
+
+                if (y-R < margin.top || y+R > Screen().height-margin.bottom) {
+                    vector.y = -vector.y;
+                }
+                
+                if (x+R > Number(right_p.attr("x"))) {
+                    if (hit_paddle(y, right_p)) {
+                        vector.x = -vector.x;
+                    }
+                }
+
+                if (x-R < 
+                    Number(left_p.attr("x"))+Number(left_p.attr("width"))) {
+                    if (hit_paddle(y, left_p)) {
+                        vector.x = -vector.x;
+                    }
+                }
+                
+                return vector;
+            };
+            
+            return function f(left, right) {
+                var screen = Screen();
+
+                ball.attr({
+                    cx: Number(ball.attr("cx"))+vector.x*speed,
+                    cy: Number(ball.attr("cy"))+vector.y*speed
+                });
+                
+                vector = collision(vector);
+
+                return f;
+            };
         };
     
 
     var left = {score: Score(0.25)(0),
-                paddle: Paddle()(margin.left, Screen().height/2)},
+                paddle: Paddle("left")(margin.left, Screen().height/2)},
         right = {score: Score(0.75)(0),
-                paddle: Paddle()(Screen().width-margin.right, Screen().height/2)},
-        middle = Middle()();
+                paddle: Paddle("right")(Screen().width-margin.right, Screen().height/2)},
+        middle = Middle()(),
+        ball = Ball();
     
     d3.select(window).on('resize', function () {
         var screen = Screen();
@@ -102,4 +158,14 @@
 
         middle();
     });
+
+    var steps = 0;
+    d3.timer(function () {
+        ball(left, right);
+
+        if (steps++ > 1000) {
+            return true;
+        }
+        return false;
+    }, 500);
 })();
