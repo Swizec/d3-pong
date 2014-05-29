@@ -10,7 +10,21 @@
                   left: 10},
         parse = function (N) {
             return Number(N.replace("px", ""));
-        };
+        },
+        currentKeysPressed = [];
+
+
+    // Add support for movement by keys
+    // When a key is pressed, add it to the current keys array for further tracking
+    d3.select("body").on("keydown", function() {
+        if (currentKeysPressed.indexOf(d3.event.keyCode) != -1) { return }
+        currentKeysPressed.push(d3.event.keyCode);
+    });
+
+    // When the key is relased, remove it from the array.
+    d3.select("body").on("keyup", function() {
+        currentKeysPressed.splice(currentKeysPressed.indexOf(d3.event.keyCode), 1);
+    });
 
     // always returns current SVG dimensions
     var Screen = function () {
@@ -31,7 +45,6 @@
                     .attr({width: 5}),
                 update = function (x, y) {
                     var height = Screen().height*0.15;
-
                     paddle.attr({
                         x: x,
                         y: y,
@@ -193,6 +206,32 @@
         middle();
     });
 
+    // Check if the paddle needs to be moved depending on current key presses
+    function movePaddle() {
+        for (var i = 0; i < currentKeysPressed.length; i++) {
+            var currentKeyPressed = currentKeysPressed[i];
+
+            /*  Key Codes:
+            *   87 = W
+            *   83 = A
+            *   38 = Up Arrow
+            *   40 = Down Arrow
+            */
+            if (currentKeyPressed && [38, 40, 83, 87].indexOf(currentKeyPressed) != -1) {
+                var leftPaddle = [83, 87].indexOf(currentKeyPressed) != -1;
+                var directionUp = [38, 87].indexOf(currentKeyPressed) != -1;
+                var paddleClass = leftPaddle ? '.left_paddle' : '.right_paddle';
+                var paddle = d3.select(paddleClass);
+                var paddleDy = 10 * (directionUp ? -1 : 1);
+                var newPaddleY = Math.max(margin.top, 
+                                        Math.min(parse(paddle.attr("y")) + paddleDy,
+                                                 Screen().height - margin.bottom - Screen().height * 0.1));
+                var paddleInstance = leftPaddle ? left : right;
+                paddleInstance.paddle(parse(paddle.attr('x')), newPaddleY);
+            }
+        }
+    }
+
     // start animation timer that runs until a player scores
     // then reset ball and start again
     function run() {
@@ -202,6 +241,8 @@
             var now = Date.now(),
                 scored = ball(left, right, now-last_time),
                 last_time = now;
+            
+            movePaddle();
 
             if (scored) {
                 d3.select(".ball").remove();
